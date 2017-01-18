@@ -1,0 +1,556 @@
+[
+  [
+    {
+      "id": "kuva",
+      "preview": "kuva.jpg",
+      "title": "Kuva",
+      "description": "Shader and lighting experiment",
+      "platforms": [
+        "vive"
+      ],
+      "href": "https://www.kuva.io/",
+      "screenshots": [
+        "upload0.jpg",
+        "upload1.jpg",
+        "upload2.jpg",
+        "upload3.jpg",
+        "upload4.jpg"
+      ],
+      "video": [
+        "http://i.giphy.com/d1E1oHQH9MHMxcnC.gif"
+      ]
+    },
+    {
+      "id": "cruciform",
+      "preview": "cruciform.jpg",
+      "title": "Cruciform",
+      "description": "Study in architecture visualisation",
+      "platforms": [
+        "vive",
+        "oculus",
+        "cardboard"
+      ],
+      "href": "https://www.kuva.io/",
+      "screenshots": [
+        "upload0.jpg",
+        "upload1.jpg",
+        "upload2.jpg",
+        "upload3.jpg",
+        "upload4.jpg",
+        "upload5.jpg"
+      ],
+      "video": [
+        "http://i.giphy.com/l3q2OHuPUoY4elFja.gif"
+      ]
+    },
+    {
+      "id": "sketchfab-vr",
+      "preview": "sketchfab-vr.jpg",
+      "title": "Sketchfab VR",
+      "description": "Explore a million things in VR",
+      "platforms": [
+        "cardboard",
+        "vive",
+        "oculus",
+        "mobile"
+      ],
+      "href": "https://sketchfab.com/vr",
+      "screenshots": [
+        "upload0.jpg",
+        "upload1.jpg",
+        "upload2.jpg",
+        "upload3.jpg",
+        "upload4.jpg",
+        "upload5.jpg"
+      ],
+      "video": [
+        "http://i.giphy.com/l3q2Px86u1KfPCk2k.gif"
+      ]
+    }
+  ],
+  [
+    {
+      "id": "broken-mantra",
+      "preview": "broken-mantra.jpg",
+      "title": "Broken Mantra",
+      "description": "Music visualization",
+      "platforms": [
+        "vive",
+        "oculus",
+        "mobile"
+      ],
+      "href": "https://mrdoob.github.io/brokenmantra/?webvr",
+      "screenshots": [
+        "upload0.jpg",
+        "upload1.jpg",
+        "upload2.jpg",
+        "upload3.jpg",
+        "upload4.jpg",
+        "upload5.jpg"
+      ],
+      "video": [
+        "http://i.giphy.com/26gsd8TTrX5wNfNN6.gif"
+      ]
+    },
+    {
+      "id": "obsidian",
+      "preview": "obsidian.jpg",
+      "title": "Obsidian",
+      "description": "A musical Javascript/WebGL experience",
+      "platforms": [
+        "vive",
+        "oculus",
+        "mobile"
+      ],
+      "href": "https://xplsv.github.io/obsidian/?webvr",
+      "screenshots": [
+        "upload0.jpg",
+        "upload1.jpg",
+        "upload2.jpg",
+        "upload3.jpg",
+        "upload4.jpg",
+        "upload5.jpg",
+        "upload6.jpg",
+        "upload7.jpg"
+      ],
+      "video": [
+        "http://i.giphy.com/26gscZNC0PEUlGEg0.gif"
+      ]
+    },
+    {
+      "id": "shader-toy-vr",
+      "preview": "shader-toy-vr.jpg",
+      "title": "Shader Toy VR",
+      "description": "Explore hundreds of shaders in VR",
+      "platforms": [
+        "vive",
+        "oculus",
+        "mobile"
+      ],
+      "href": "shadertoy.com/?filter=vr",
+      "screenshots": [
+        "upload0.jpg",
+        "upload1.jpg",
+        "upload2.jpg",
+        "upload3.jpg",
+        "upload4.jpg",
+        "upload5.jpg",
+        "upload6.jpg"
+      ],
+      "video": [
+        "http://i.giphy.com/d1E2ToOQpxec1kVG.gif"
+      ]
+    }
+  ],
+  [
+    {
+      "id": "inspirit",
+      "preview": "inspirit.png",
+      "title": "Inspirit",
+      "description": "Interactive VR story for everyone",
+      "platforms": [
+        "cardboard",
+        "vive",
+        "oculus",
+        "mobile"
+      ],
+      "href": "http://inspirit.unboring.net/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": [
+        "http://i.giphy.com/3oz8xF6x0wzayjx7sQ.gif"
+      ]
+    },
+    {
+      "id": "math-world",
+      "preview": "math-world.png",
+      "title": "Math World",
+      "description": "Explore calculus concepts in VR",
+      "platforms": [
+        "vive"
+      ],
+      "href": "http://vr.sld.gs/mathworldvr/#",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": [
+        "http://i.giphy.com/l4q8eeVWZAXufTdra.gif"
+      ]
+    },
+    {
+      "id": "dark-haze",
+      "preview": "dark-haze.png",
+      "title": "Dark Haze",
+      "description": "Music and shader experiment",
+      "platforms": [
+        "vive",
+        "oculus",
+        "mobile"
+      ],
+      "href": "https://christmasexperiments.com/2016/24/dark-haze/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": [
+        "http://i.giphy.com/3o7TKspug2sE0V1XTW.gif"
+      ]
+    }
+  ],
+  [
+    {
+      "id": "night-eyes",
+      "preview": "night-eyes.png",
+      "title": "Night Eyes",
+      "description": "Nightscape experiment with lights",
+      "platforms": [
+        "vive",
+        "oculus",
+        "mobile"
+      ],
+      "type": "marquee",
+      "href": "http://christmasexperiments.com/2016/01/night-eye/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": [
+        "http://i.giphy.com/l0MYGOd9ozFFrZ4v6.gif"
+      ]
+    },
+    {
+      "id": "adit",
+      "preview": "adit.png",
+      "title": "Adit",
+      "description": "VR exploratory data analysis",
+      "platforms": [
+        "vive"
+      ],
+      "href": "https://wmurphyrd.shinyapps.io/adit/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": [
+        "http://i.giphy.com/3o7TKrMbpUSBatYV4Q.gif"
+      ]
+    }
+  ],
+  [
+    {
+      "id": "snow",
+      "preview": "snow.png",
+      "title": "Snow",
+      "description": "Beautiful snowflake experience",
+      "platforms": [
+        "cardboard",
+        "vive",
+        "oculus"
+      ],
+      "href": "http://surebak.com/snow/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png"
+      ],
+      "video": [
+        "http://i.giphy.com/l3vRfMo6TY9ryce0E.gif"
+      ]
+    },
+    {
+      "id": "black-rain",
+      "preview": "black-rain.png",
+      "title": "Black Rain",
+      "description": "Rain in WebVR",
+      "platforms": [
+        "vive",
+        "oculus"
+      ],
+      "href": "http://demo.marpi.pl/archan/black_rain/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png"
+      ],
+      "video": [
+        "http://i.giphy.com/3o7TKwl4qeyP2jZnIQ.gif"
+      ]
+    },
+    {
+      "id": "nyc-snow-globe",
+      "preview": "nyc-snow-globe.png",
+      "title": "NYC Snow Globe",
+      "description": "Take a ride around the city",
+      "platforms": [
+        "cardboard",
+        "mobile"
+      ],
+      "href": "http://2017.ronikdesign.com/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png"
+      ],
+      "video": [
+        "http://i.giphy.com/3oz8xODjgJtG17yvhC.gif"
+      ]
+    }
+  ],
+  [
+    {
+      "id": "stagevr",
+      "preview": "stagevr.png",
+      "title": "StageVR",
+      "description": "Practice your next talk on the big stage",
+      "platforms": [
+        "cardboard",
+        "vive",
+        "oculus"
+      ],
+      "href": "http://jonathanzwhite.github.io/stagevr/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": [
+        "http://i.giphy.com/l0MYBzZSbTGQmInK0.gif"
+      ]
+    },
+    {
+      "id": "day-and-night",
+      "preview": "day-and-night.png",
+      "title": "Day and Night",
+      "description": "Educational solar system exploration",
+      "platforms": [
+        "vive"
+      ],
+      "href": "https://dayandnight.moar.io/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": [
+        "http://i.giphy.com/l3vR4nbzNOTHd3CSY.gif"
+      ]
+    },
+    {
+      "id": "puzzle-rain",
+      "preview": "puzzle-rain.png",
+      "title": "Puzzle Rain",
+      "description": "A musical WebVR journey",
+      "platforms": [
+        "vive"
+      ],
+      "href": "https://mozvr.com/puzzle-rain/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": []
+    }
+  ],
+  [
+    {
+      "id": "light",
+      "preview": "light.png",
+      "title": "Light",
+      "description": "Multisensory aesthetic experience",
+      "platforms": [
+        "cardboard",
+        "vive",
+        "oculus",
+        "mobile"
+      ],
+      "href": "http://maevr.vertigomusic.com/",
+      "type": "marquee",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": [
+        "http://i.giphy.com/l0MYGStGO3KS2h8NG.gif"
+      ]
+    },
+    {
+      "id": "mass-migrations",
+      "preview": "massmigrations.png",
+      "title": "Mass Migrations",
+      "description": "An experiment in mecha world creation",
+      "platforms": [
+        "cardboard",
+        "vive",
+        "oculus"
+      ],
+      "href": "http://www.massmigrat.io/ns/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": [
+        "http://i.giphy.com/l3vQXKME3DBHgYWre.gif"
+      ]
+    }
+  ],
+  [
+    {
+      "id": "a-painter",
+      "preview": "a-painter.png",
+      "title": "A-Painter",
+      "description": "Paint in VR, in your browser",
+      "platforms": [
+        "vive"
+      ],
+      "href": "https://aframe.io/a-painter/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": [
+        "http://i.giphy.com/l4Jz4RYsc4eir6AQo.gif"
+      ]
+    },
+    {
+      "id": "screenvr",
+      "preview": "screenvr.png",
+      "title": "ScreenVR",
+      "description": "Use your desktop in VR, on the web",
+      "platforms": [
+        "vive",
+        "oculus"
+      ],
+      "href": "https://jonathanzwhite.github.io/screenvr/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png"
+      ],
+      "video": [
+        "http://i.giphy.com/3oz8xs6ykvp8FtqLN6.gif"
+      ]
+    },
+    {
+      "id": "myth",
+      "preview": "myth.png",
+      "title": "Myth",
+      "description": "Interactive music and film experience",
+      "platforms": [
+        "cardboard",
+        "vive",
+        "oculus"
+      ],
+      "href": "http://film.livyatanim.com/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": [
+        "http://i.giphy.com/l3vRdQm47thpPag5a.gif"
+      ]
+    }
+  ],
+  [
+    {
+      "id": "virtual-art-session",
+      "preview": "virtual-art-session.png",
+      "title": "Virtual Reality Art Session",
+      "description": "Watch a TiltBrush artist at work",
+      "platforms": [
+        "vive"
+      ],
+      "href": "https://virtualart.chromeexperiments.com/vr/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": [
+        "http://i.giphy.com/3oz8xNinbhBVeTcNhe.gif"
+      ]
+    },
+    {
+      "id": "virtual-forest",
+      "preview": "virtual-forest.png",
+      "title": "Virtual Forest",
+      "description": "Tracking seasonal change in a virtual forest",
+      "platforms": [
+        "cardboard",
+        "vive",
+        "oculus"
+      ],
+      "href": "http://virtualforest.io/index.html",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": []
+    },
+    {
+      "id": "whisper-momoko",
+      "preview": "momoko.png",
+      "title": "Whisper Momoko",
+      "description": "Musical and visual experience",
+      "platforms": [
+        "cardboard"
+      ],
+      "href": "http://aidn.jp/momoko_vr/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png"
+      ],
+      "video": [
+        "http://i.giphy.com/l0MYC7OwKZ2tM9ZVC.gif"
+      ]
+    }
+  ],
+  [
+    {
+      "id": "a-way-to-go",
+      "preview": "a-way-to-go.png",
+      "title": "A Way to Go",
+      "description": "Interactive walk through the woods",
+      "type": "marquee",
+      "platforms": [
+        "cardboard",
+        "vive",
+        "oculus"
+      ],
+      "href": "http://a-way-to-go.com/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": [
+        "http://i.giphy.com/l0MYAGal0dBVfu7u0.gif"
+      ]
+    },
+    {
+      "id": "the-searching-planet",
+      "preview": "the-searching-planet.png",
+      "title": "The Searching Planet",
+      "description": "Fly over the Searching Planet",
+      "platforms": [
+        "cardboard"
+      ],
+      "href": "https://searchingplanet.withgoogle.com/vr/en/",
+      "screenshots": [
+        "upload0.png",
+        "upload1.png",
+        "upload2.png"
+      ],
+      "video": []
+    }
+  ]
+]

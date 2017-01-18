@@ -1,0 +1,33 @@
+{
+  "name": "webvrrocks-extension",
+  "description": "A browser extension for WebVR.",
+  "version": "1.0.0",
+  "author": "Chris Van Wiemeersch <hearcomestreble@gmail.com>",
+  "keywords": [
+    "canvas",
+    "webgl",
+    "video",
+    "capture",
+    "record",
+    "firefox",
+    "chrome",
+    "extension"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/webvrrocks/extension.git"
+  },
+  "devDependencies": {
+    "web-ext": "^1.7.0"
+  },
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "npm run dev:firefox",
+    "dev:firefox": "web-ext run --source-dir firefox/ --firefox=nightly",
+    "lint": "npm run lint:firefox",
+    "lint:firefox": "web-ext lint",
+    "test": "npm run lint",
+    "deploy": "npm run fix && npm run clean && npm install && npm test && npm version patch"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "manifest_version": 2,
+  "version": "1.0",
+  "default_locale": "en",
+  "name": "__MSG_extensionName__",
+  "description": "__MSG_extensionDescription__",
+  "homepage_url": "https://github.com/webvrrocks/extension",
+  "icons": {
+    "32": "icons/rocks-32.png",
+    "64": "icons/rocks-64.png"
+  },
+  "permissions": [
+    "<all_urls>",
+    "notifications",
+    "storage",
+    "tabs"
+  ],
+  "browser_action": {
+    "browser_style": true,
+    "default_icon": {
+      "38": "icons/star-empty-38.png"
+    },
+    "default_title": "WebVR",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content_script.js"
+      ]
+    }
+  ]
+}
