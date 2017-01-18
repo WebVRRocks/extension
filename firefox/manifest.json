@@ -11,17 +11,27 @@
   },
   "permissions": [
     "<all_urls>",
+    "activeTab",
+    "contextMenus",
     "notifications",
     "storage",
-    "tabs"
+    "tabs",
+    "webRequest",
+    "webRequestBlocking"
   ],
+  "page_action": {
+    "browser_style": true,
+    "default_icon": {
+      "16": "icons/vr-mode-gray.svg"
+    },
+    "default_title": "__MSG_extensionBrowserActionDefaultTitle__"
+  },
   "browser_action": {
     "browser_style": true,
     "default_icon": {
-      "38": "icons/star-empty-38.png"
-    },
-    "default_title": "WebVR",
-    "default_popup": "popup.html"
+      "32": "icons/rocks-32.png",
+      "64": "icons/rocks-64.png"
+    }
   },
   "background": {
     "scripts": [

@@ -1,6 +1,6 @@
 function saveOptions (e) {
   browser.storage.local.set({
-    colour: document.querySelector('#headset').value
+    vr_displays: document.querySelector('#vr_displays').value
   });
   e.preventDefault();
 }
@@ -8,6 +8,6 @@ function saveOptions (e) {
 function loadOptions () {
   var gettingItem = browser.storage.local.get('webvr:headset');
   gettingItem.then(res => {
-    document.querySelector('#headset').value = res.colour || 'HTC Vive';
+    document.querySelector('#vr_displays').value = res.vr_displays;
   });
 }

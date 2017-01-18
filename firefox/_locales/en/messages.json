@@ -1,14 +1,30 @@
 {
   "extensionName": {
-    "message": "Cancorder",
+    "message": "WebVR Rocks",
     "description": "Name of the extension."
   },
   "extensionDescription": {
-    "message": "Captures a video of a canvas.",
+    "message": "Handles WebVR presentation and navigation.",
     "description": "Description of the extension."
   },
-  "notificationVideoDoneTitle": {
-    "message": "Video captured",
-    "description": "Title of the click notification."
+  "extensionPageActionDefaultTitle": {
+    "message": "WebVR",
+    "description": "Default title of the extension's page action."
+  },
+  "extensionPageActionEnterVRTitle": {
+    "message": "Enter VR",
+    "description": "Title of the extension's page action for a user to enter a scene on a WebVR page."
+  },
+  "extensionPageActionExitVRTitle": {
+    "message": "Exit VR",
+    "description": "Title of the extension's page action for a user to exit a scene on a WebVR page."
+  },
+  "notificationHeadsetConnectedTitle": {
+    "message": "Headset connected",
+    "description": "Title of the notification for when a headset is connected."
+  },
+  "notificationHeadsetDisconnectedTitle": {
+    "message": "Headset disconnected",
+    "description": "Title of the notification for when a headset is disconnected."
   }
 }

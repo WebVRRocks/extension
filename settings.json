@@ -1,0 +1,26 @@
+{
+  "vr_displays": {
+    "htc_vive": {
+      "name": "HTC Vive",
+      "matches": [
+        "HTC Vive"
+      ]
+    },
+    "oculus_rift": {
+      "name": "Oculus Rift",
+      "matches": [
+        "Oculus Rift"
+      ]
+    }
+  },
+  "options": {
+    "vr_display_default": {
+      "name": "Default VR displays",
+      "description": "Default VR display to present to."
+    },
+    "gamepad_default": {
+      "name": "Default gamepad",
+      "description": "Default gamepad to use."
+    }
+  }
+}
