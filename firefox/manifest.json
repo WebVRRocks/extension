@@ -24,7 +24,7 @@
     "default_icon": {
       "16": "icons/vr-mode-gray.svg"
     },
-    "default_title": "__MSG_extensionBrowserActionDefaultTitle__"
+    "default_title": "__MSG_extensionPageActionDefaultTitle__"
   },
   "browser_action": {
     "browser_style": true,

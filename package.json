@@ -26,7 +26,7 @@
     "dev": "npm run dev:firefox",
     "dev:firefox": "web-ext run --source-dir firefox/ --firefox=nightly",
     "lint": "npm run lint:firefox",
-    "lint:firefox": "web-ext lint",
+    "lint:firefox": "web-ext lint --source-dir firefox/",
     "test": "npm run lint",
     "deploy": "npm run fix && npm run clean && npm install && npm test && npm version patch"
   }
