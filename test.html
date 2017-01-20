@@ -1,0 +1,414 @@
+
+<!doctype html>
+<!--
+Copyright 2016 The Chromium Authors. All rights reserved.
+Use of this source code is governed by a BSD-style license that can be
+found in the LICENSE file.
+-->
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <!--Chrome origin trial header-->
+    <meta http-equiv="origin-trial" content="AqzKk2C27v9mrSsi7ipK2wwsAW/J0okEJIpK6ucBchNtgQWz8juU8dydS0J2kpVyQ5Lik5GeeEMXstMCKY6brg8AAABOeyJvcmlnaW4iOiAiaHR0cHM6Ly93ZWJ2ci5pbmZvOjQ0MyIsICJmZWF0dXJlIjogIldlYlZSIiwgImV4cGlyeSI6IDE0ODU4ODA1ODJ9">
+
+    <title>04b - Simple Mirroring pt. 2</title>
+
+    <!--
+      This sample demonstrates how to restrict a simple mirror of VR content
+      (using PreserveDrawingBuffer) to only show the contents of a single eye.
+    -->
+
+    <style>
+      body {
+        background-color: black;
+      }
+
+      #canvas-clip, #webgl-canvas {
+        box-sizing: border-box;
+        height: 100%;
+        left: 0;
+        margin: 0;
+        position: absolute;
+        top: 0;
+        width: 100%;
+      }
+
+      #canvas-clip.presenting {
+        /* This property allows the canvas-clip div to hide the parts of the
+        WebVR canvas that extend past it's bounds without adding scrollbars*/
+        overflow: hidden;
+
+        /* These center the div on the screen */
+        bottom: 0;
+        right: 0;
+        margin: auto;
+      }
+
+      .presenting #webgl-canvas {
+        /* By making the canvas 200% as wide as it's parent we'll only see the
+        left eye's content. The rest will be cropped by the parent div */
+        width: 200%;
+      }
+    </style>
+
+    <!-- This entire block in only to facilitate dynamically enabling and
+    disabling the WebVR polyfill, and is not necessary for most WebVR apps.
+    If you want to use the polyfill in your app, just include the js file and
+    everything will work the way you want it to by default. -->
+    <script>
+      var WebVRConfig = {
+        // Prevents the polyfill from initializing automatically.
+        DEFER_INITIALIZATION: true,
+        // Ensures the polyfill is always active when initialized, even if the
+        // native API is available. This is probably NOT what most pages want.
+        ALWAYS_APPEND_POLYFILL_DISPLAY: true,
+        // Polyfill optimizations
+        DIRTY_SUBMIT_FRAME_BINDINGS: true,
+        BUFFER_SCALE: 0.75,
+      };
+    </script>
+    <script src="https://webvr.info/samples/js/third-party/webvr-polyfill.js"></script>
+    <script src="https://webvr.info/samples/js/third-party/wglu/wglu-url.js"></script>
+    <script>
+      // Dynamically turn the polyfill on if requested by the query args.
+      if (WGLUUrl.getBool('polyfill', false)) {
+        InitializeWebVRPolyfill();
+      } else {
+        // Shim for migration from older version of WebVR. Shouldn't be necessary for very long.
+        InitializeSpecShim();
+      }
+    </script>
+    <!-- End sample polyfill enabling logic -->
+
+    <script src="https://webvr.info/samples/js/third-party/gl-matrix-min.js"></script>
+
+    <script src="https://webvr.info/samples/js/third-party/wglu/wglu-program.js"></script>
+    <script src="https://webvr.info/samples/js/third-party/wglu/wglu-stats.js"></script>
+    <script src="https://webvr.info/samples/js/third-party/wglu/wglu-texture.js"></script>
+
+    <script src="https://webvr.info/samples/js/vr-cube-sea.js"></script>
+    <script src="https://webvr.info/samples/js/vr-samples-util.js"></script>
+  </head>
+  <body>
+    <div id="canvas-clip">
+      <canvas id="webgl-canvas"></canvas>
+    </div>
+    <script>
+      /* global mat4, VRCubeSea, WGLUStats, WGLUTextureLoader, VRSamplesUtil */
+      (function () {
+      "use strict";
+
+      var vrDisplay = null;
+      var frameData = null;
+      var projectionMat = mat4.create();
+      var viewMat = mat4.create();
+      var vrPresentButton = null;
+
+      // ================================
+      // WebVR-specific code begins here.
+      // ================================
+
+      // WebGL setup.
+      var webglCanvas = document.getElementById("webgl-canvas");
+      var canvasClip = document.getElementById("canvas-clip");
+      var gl = null;
+      var cubeSea = null;
+      var stats = null;
+
+      function initWebGL (preserveDrawingBuffer) {
+        var glAttribs = {
+          alpha: false,
+          antialias: true,
+          preserveDrawingBuffer: preserveDrawingBuffer
+        };
+        var useWebgl2 = WGLUUrl.getBool('webgl2', false);
+        var contextTypes = useWebgl2 ? ["webgl2"] : ["webgl", "experimental-webgl"];
+        for (var i in contextTypes) {
+          gl = webglCanvas.getContext(contextTypes[i], glAttribs);
+          if (gl)
+            break;
+        }
+        if (!gl) {
+          var webglType = (useWebgl2 ? "WebGL 2" : "WebGL")
+          VRSamplesUtil.addError("Your browser does not support " + webglType + ".");
+          return;
+        }
+        gl.clearColor(0.1, 0.2, 0.3, 1.0);
+        gl.enable(gl.DEPTH_TEST);
+        gl.enable(gl.CULL_FACE);
+
+        var textureLoader = new WGLUTextureLoader(gl);
+        var texture = textureLoader.loadTexture("https://webvr.info/samples/media/textures/cube-sea.png");
+        cubeSea = new VRCubeSea(gl, texture);
+        var enablePerformanceMonitoring = WGLUUrl.getBool(
+            'enablePerformanceMonitoring', false);
+        stats = new WGLUStats(gl, enablePerformanceMonitoring);
+
+        window.addEventListener("resize", onResize, false);
+        onResize();
+        window.requestAnimationFrame(onAnimationFrame);
+      }
+
+      function onVRRequestPresent () {
+        vrDisplay.requestPresent([{ source: webglCanvas }]).then(function () {
+        }, function (err) {
+          var errMsg = "requestPresent failed.";
+          if (err && err.message) {
+            errMsg += "<br/>" + err.message
+          }
+          VRSamplesUtil.addError(errMsg, 2000);
+        });
+      }
+
+      function onVRExitPresent () {
+        if (!vrDisplay.isPresenting)
+          return;
+
+        vrDisplay.exitPresent().then(function () {
+        }, function () {
+          VRSamplesUtil.addError("exitPresent failed.", 2000);
+        });
+      }
+
+      function onVRPresentChange () {
+        if (vrDisplay.isPresenting) {
+          if (vrDisplay.capabilities.hasExternalDisplay) {
+            VRSamplesUtil.removeButton(vrPresentButton);
+            vrPresentButton = VRSamplesUtil.addButton("Exit VR", "E", "https://webvr.info/samples/media/icons/cardboard64.png", onVRExitPresent);
+            canvasClip.classList.add("presenting");
+
+            // Set the size to half the width and height of the eye's render
+            // target. This makes the image proportional while also reducing the
+            // draw costs of mirroring it to the screen.
+            var leftEye = vrDisplay.getEyeParameters("left");
+            canvasClip.style.width = (leftEye.renderWidth/2) + "px";
+            canvasClip.style.height = (leftEye.renderHeight/2) + "px";
+          }
+        } else {
+          if (vrDisplay.capabilities.hasExternalDisplay) {
+            VRSamplesUtil.removeButton(vrPresentButton);
+            vrPresentButton = VRSamplesUtil.addButton("Enter VR", "E", "https://webvr.info/samples/media/icons/cardboard64.png", onVRRequestPresent);
+
+            // Reset the div to it's default size when we're done presenting.
+            canvasClip.classList.remove("presenting");
+            canvasClip.style.width = "";
+            canvasClip.style.height = "";
+          }
+        }
+
+        // Make sure the canvas is resized AFTER we've updated the container div.
+        onResize();
+      }
+
+      if (navigator.getVRDisplays) {
+        frameData = new VRFrameData();
+
+        navigator.getVRDisplays().then(function (displays) {
+          if (displays.length > 0) {
+            vrDisplay = displays[displays.length - 1];
+            VRSamplesUtil.addButton("Reset Pose", "R", null, function () { vrDisplay.resetPose(); });
+
+            if (vrDisplay.capabilities.canPresent)
+              vrPresentButton = VRSamplesUtil.addButton("Enter VR", "E", "https://webvr.info/samples/media/icons/cardboard64.png", onVRRequestPresent);
+
+            // For the benefit of automated testing. Safe to ignore.
+            if (vrDisplay.capabilities.canPresent && WGLUUrl.getBool('canvasClickPresents', false))
+              webglCanvas.addEventListener("click", onVRRequestPresent, false);
+
+            window.addEventListener('vrdisplaypresentchange', onVRPresentChange, false);
+            window.addEventListener('vrdisplayactivate', onVRRequestPresent, false);
+            window.addEventListener('vrdisplaydeactivate', onVRExitPresent, false);
+
+            initWebGL(vrDisplay.capabilities.hasExternalDisplay);
+          } else {
+            initWebGL(false);
+            VRSamplesUtil.addInfo("WebVR supported, but no VRDisplays found.", 3000);
+          }
+        });
+      } else if (navigator.getVRDevices) {
+        initWebGL(false);
+        VRSamplesUtil.addError("Your browser supports WebVR but not the latest version. See <a href='http://webvr.info'>webvr.info</a> for more info.");
+      } else {
+        initWebGL(false);
+        VRSamplesUtil.addError("Your browser does not support WebVR. See <a href='http://webvr.info'>webvr.info</a> for assistance.");
+      }
+
+      function onResize () {
+        if (vrDisplay && vrDisplay.isPresenting) {
+          var leftEye = vrDisplay.getEyeParameters("left");
+          var rightEye = vrDisplay.getEyeParameters("right");
+
+          webglCanvas.width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
+          webglCanvas.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
+        } else {
+          webglCanvas.width = webglCanvas.offsetWidth * window.devicePixelRatio;
+          webglCanvas.height = webglCanvas.offsetHeight * window.devicePixelRatio;
+        }
+      }
+
+      function onClick () {
+        // Reset the background color to a random value
+        gl.clearColor(
+            Math.random() * 0.5,
+            Math.random() * 0.5,
+            Math.random() * 0.5, 1.0);
+      }
+      webglCanvas.addEventListener("click", onClick, false);
+
+      function onAnimationFrame (t) {
+        stats.begin();
+
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+        if (vrDisplay) {
+          vrDisplay.requestAnimationFrame(onAnimationFrame);
+
+          vrDisplay.getFrameData(frameData);
+
+          if (vrDisplay.isPresenting) {
+            gl.viewport(0, 0, webglCanvas.width * 0.5, webglCanvas.height);
+            cubeSea.render(frameData.leftProjectionMatrix, frameData.leftViewMatrix, stats, t);
+
+            gl.viewport(webglCanvas.width * 0.5, 0, webglCanvas.width * 0.5, webglCanvas.height);
+            cubeSea.render(frameData.rightProjectionMatrix, frameData.rightViewMatrix, stats, t);
+
+            vrDisplay.submitFrame();
+          } else {
+            gl.viewport(0, 0, webglCanvas.width, webglCanvas.height);
+            mat4.perspective(projectionMat, Math.PI*0.4, webglCanvas.width / webglCanvas.height, 0.1, 1024.0);
+            cubeSea.render(projectionMat, frameData.leftViewMatrix, stats, t);
+            stats.renderOrtho();
+          }
+        } else {
+          window.requestAnimationFrame(onAnimationFrame);
+
+          // No VRDisplay found.
+          gl.viewport(0, 0, webglCanvas.width, webglCanvas.height);
+          mat4.perspective(projectionMat, Math.PI*0.4, webglCanvas.width / webglCanvas.height, 0.1, 1024.0);
+          mat4.identity(viewMat);
+          cubeSea.render(projectionMat, viewMat, stats, t);
+
+          stats.renderOrtho();
+        }
+
+        stats.end();
+      }
+      })();
+    </script>
+    <script>
+navigator.getVRDisplays().then(displays => {
+  console.log('displays', displays);
+});
+
+var logEvent = e => {
+  console.log('[event]', e.type, e);
+};
+
+window.addEventListener('vrdisplayconnected', logEvent);
+window.addEventListener('vrdisplayconnect', logEvent);
+window.addEventListener('vrdisplaydisconnected', logEvent);
+window.addEventListener('vrdisplaydisconnect', logEvent);
+window.addEventListener('vrdisplayactivate', logEvent);
+window.addEventListener('vrdisplaydeactivate', logEvent);
+window.addEventListener('vrdisplayblur', logEvent);
+window.addEventListener('vrdisplayfocus', logEvent);
+window.addEventListener('vrdisplaypresentchange', logEvent);
+window.addEventListener('appinstalled', logEvent);
+window.addEventListener('load', logEvent);
+
+console.log('loaded');
+
+/*
+
+Chromium events
+
+[event] load Event {isTrusted: true, type: "load", target: document, currentTarget: Window, eventPhase: 2…}
+test.html:304 displays [VRDisplay]
+4test.html:1 [.Offscreen-For-WebGL-000001A7D90B5130]RENDER WARNING: texture bound to texture unit 0 is not renderable. It maybe non-power-of-2 and have incompatible texture filtering.
+test.html:308 [event] vrdisplaypresentchange VRDisplayEvent {display: VRDisplay, reason: "", type: "vrdisplaypresentchange", target: Window, currentTarget: Window…}
+test.html:308 [event] vrdisplaydeactivate VRDisplayEvent {display: VRDisplay, reason: "unmounted", type: "vrdisplaydeactivate", target: Window, currentTarget: Window…}
+test.html:308 [event] vrdisplaypresentchange VRDisplayEvent {display: VRDisplay, reason: "", type: "vrdisplaypresentchange", target: Window, currentTarget: Window…}
+test.html:308 [event] vrdisplayactivate VRDisplayEvent {display: VRDisplay, reason: "mounted", type: "vrdisplayactivate", target: Window, currentTarget: Window…}
+test.html:308 [event] vrdisplaypresentchange VRDisplayEvent {display: VRDisplay, reason: "", type: "vrdisplaypresentchange", target: Window, currentTarget: Window…}
+<I'm about to take off my headset>
+test.html:308 [event] vrdisplaydeactivate VRDisplayEvent {display: VRDisplay, reason: "unmounted", type: "vrdisplaydeactivate", target: Window, currentTarget: Window…}
+<notice that when I put my headset back on, we're still presenting even though I pressed the "Exit VR" button on the page>
+test.html:308 [event] vrdisplaypresentchange VRDisplayEvent {display: VRDisplay, reason: "", type: "vrdisplaypresentchange", target: Window, currentTarget: Window…}
+<why did this event fire twice?>
+test.html:308 [event] vrdisplaypresentchange VRDisplayEvent {display: VRDisplay, reason: "", type: "vrdisplaypresentchange", target: Window, currentTarget: Window…}
+test.html:308 [event] vrdisplayactivate VRDisplayEvent {display: VRDisplay, reason: "mounted", type: "vrdisplayactivate", target: Window, currentTarget: Window…}
+test.html:308 [event] vrdisplaydeactivate VRDisplayEvent {display: VRDisplay, reason: "unmounted", type: "vrdisplaydeactivate", target: Window, currentTarget: Window…}
+test.html:308 [event] vrdisplaypresentchange VRDisplayEvent {display: VRDisplay, reason: "", type: "vrdisplaypresentchange", target: Window, currentTarget: Window…}
+test.html:308 [event] vrdisplayactivate VRDisplayEvent {display: VRDisplay, reason: "mounted", type: "vrdisplayactivate", target: Window, currentTarget: Window…}
+test.html:308 [event] vrdisplaypresentchange VRDisplayEvent {display: VRDisplay, reason: "", type: "vrdisplaypresentchange", target: Window, currentTarget: Window…}
+test.html:308 [event] vrdisplaydeactivate VRDisplayEvent {display: VRDisplay, reason: "unmounted", type: "vrdisplaydeactivate", target: Window, currentTarget: Window…}
+test.html:308 [event] vrdisplaypresentchange VRDisplayEvent {display: VRDisplay, reason: "", type: "vrdisplaypresentchange", target: Window, currentTarget: Window…}
+[event] vrdisplaydisconnect VRDisplayEvent {display: VRDisplay, reason: "disconnect", type: "vrdisplaydisconnect", target: Window, currentTarget: Window…}
+test.html:308 [event] vrdisplayconnect VRDisplayEvent {display: VRDisplay, reason: "connect", type: "vrdisplayconnect", target: Window, currentTarget: Window…}bubbles: truecancelBubble: falsecancelable: falsecomposed: falsecurrentTarget: WindowdefaultPrevented: falsedisplay: VRDisplayeventPhase: 2path: Array[1]reason: "connect"returnValue: truesrcElement: Windowtarget: WindowtimeStamp: 172811.72type: "vrdisplayconnect"__proto__: VRDisplayEvent
+<almost no delay for next event to fire after disconnecting>
+test.html:308 [event] vrdisplaydisconnect VRDisplayEvent {display: VRDisplay, reason: "disconnect", type: "vrdisplaydisconnect", target: Window, currentTarget: Window…}
+<a couple-second delay after reconnecting>
+test.html:308 [event] vrdisplayconnect VRDisplayEvent {display: VRDisplay, reason: "connect", type: "vrdisplayconnect", target: Window, currentTarget: Window…}
+<almost no delay for next event to fire after disconnecting>
+test.html:308 [event] vrdisplaydisconnect VRDisplayEvent {display: VRDisplay, reason: "disconnect", type: "vrdisplaydisconnect", target: Window, currentTarget: Window…}
+<a couple-second delay after reconnecting>
+test.html:308 [event] vrdisplayconnect VRDisplayEvent {display: VRDisplay, reason: "connect", type: "vrdisplayconnect", target: Window, currentTarget: Window…}
+
+
+Firefox Nightly events
+
+<first load>
+loadedtest.html:323:1
+[event] vrdisplayconnected vrdisplayconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, eventPhase: 0, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 71.26363309180567, cancelBubble: false, originalTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, 1 more… }test.html:308:3
+displays Array [ VRDisplay ]test.html:304:3
+[event] load load { target: HTMLDocument file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, eventPhase: 0, bubbles: false, cancelable: false, defaultPrevented: false, composed: false, timeStamp: 222.1109025623319, cancelBubble: false, originalTarget: HTMLDocument file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, 1 more… }test.html:308:3
+
+<page refresh>
+loadedtest.html:323:1
+displays Array [ VRDisplay ]test.html:304:3
+[event] load load { target: HTMLDocument file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, eventPhase: 0, bubbles: false, cancelable: false, defaultPrevented: false, composed: false, timeStamp: 222.1109025623319, cancelBubble: false, originalTarget: HTMLDocument file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, 1 more… }test.html:308:3
+
+<page when disconnecting and reconnecting; several-second delays for both events to fire>
+displays Array [ VRDisplay ]test.html:304:3
+[event] load load { target: HTMLDocument file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: false, cancelable: false, defaultPrevented: false, composed: false, timeStamp: 276.16919552363277, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplaydisconnected vrdisplaydisconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 5661.763026869344, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplayconnected vrdisplayconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 15838.930899330724, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplaydisconnected vrdisplaydisconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 20838.96408452902, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplayconnected vrdisplayconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 30853.793917548213, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplaydisconnected vrdisplaydisconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 35868.28478747053, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplayconnected vrdisplayconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 45895.04864989576, cancelBubble: false, 1 more… }test.html:308:3
+
+<page when entering, disconnecting, exiting, entering... BUG: black screen and can never reconnect again>
+loadedtest.html:323:1
+displays Array [ VRDisplay ]test.html:304:3
+[event] load load { target: HTMLDocument file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: false, cancelable: false, defaultPrevented: false, composed: false, timeStamp: 342.77346875001234, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplaydisconnected vrdisplaydisconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 13188.619136244597, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplayconnected vrdisplayconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 18711.210947638894, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplaypresentchange vrdisplaypresentchange { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 36645.015958524826, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplaydisconnected vrdisplaydisconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 88842.80092555098, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplaypresentchange vrdisplaypresentchange { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 94044.32831380871, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplayconnected vrdisplayconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 98857.13693121458, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplaypresentchange vrdisplaypresentchange { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 104088.87707214896, cancelBubble: false, 1 more… }test.html:308:3
+
+<events fire okay when I launch the browser from scratch, and I actually explicitly press the "Exit VR" button when I exit VR mode>
+loadedtest.html:323:1
+[event] vrdisplayconnected vrdisplayconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, eventPhase: 0, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 69.31321256818275, cancelBubble: false, originalTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, 1 more… }test.html:308:3displays Array [ VRDisplay ]test.html:304:3
+[event] load load { target: HTMLDocument file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, eventPhase: 0, bubbles: false, cancelable: false, defaultPrevented: false, composed: false, timeStamp: 225.8189534099569, cancelBubble: false, originalTarget: HTMLDocument file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, 1 more… }test.html:308:3
+[event] vrdisplaypresentchange vrdisplaypresentchange { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 5538.641200450845, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplaypresentchange vrdisplaypresentchange { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 13121.677085106998, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplaydisconnected vrdisplaydisconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 130496.17718367494, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplayconnected vrdisplayconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 139562.0802220564, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplaypresentchange vrdisplaypresentchange { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 139573.61879451608, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplaypresentchange vrdisplaypresentchange { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 143833.94008254423, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplaydisconnected vrdisplaydisconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 150555.5553799725, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplayconnected vrdisplayconnected { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 156963.42003493136, cancelBubble: false, 1 more… }test.html:308:3
+[event] vrdisplaypresentchange vrdisplaypresentchange { target: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, isTrusted: true, currentTarget: Window file:///C:/Users/webvr/projects/webvrrocks/extension/test.html, eventPhase: 2, bubbles: true, cancelable: true, defaultPrevented: false, composed: false, timeStamp: 156968.468530753, cancelBubble: false, 1 more… }test.html:308:3
+
+*/
+    </script>
+  </body>
+</html>
