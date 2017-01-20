@@ -1,14 +1,14 @@
 /* global browser, chrome */
 console.log('my awesome content_script');
 
-chrome.runtime.sendMessage(
-  {
-    action: 'hello world'
-  },
-  function (msg) {
-    console.log('message', msg);
-  }
-);
+// chrome.runtime.sendMessage(
+//   {
+//     action: 'hello world'
+//   },
+//   function (msg) {
+//     console.log('message', msg);
+//   }
+// );
 
 var ObjectEventTarget = function () {
   'use strict';
@@ -113,14 +113,19 @@ var ObjectEventTarget = function () {
 
 if (!('vr' in navigator)) {
   (function (navigator) {
-    if ('Promise' in window) {
+    if (!('Promise' in window)) {
       throw new Error('"Promise" is not supported');
     }
+    var ObjectEventTargetMixin = function () {};
+    ObjectEventTargetMixin.prototype.addEventListener = ObjectEventTarget.addEventListener;
+    ObjectEventTargetMixin.prototype.removeEventListener = ObjectEventTarget.removeEventListener;
+    ObjectEventTargetMixin.prototype.dispatchEvent = ObjectEventTarget.dispatchEvent;
     var displaysBefore;
     var oldAvailability = 'vrEnabled' in navigator ? navigator.vrEnabled : false;
     var newAvailability;  // NOTE: We cannot observe `navigator.vrEnabled` unfortunately.
     var oldDisplays;
     var newDisplays;
+    var oldDisplaysPresenting = {};
     var browserMsgListener = function (msg, sender, sendResponse) {
       if (msg.referringDisplay) {
         var referringDisplayStr = msg.refferingDisplay;
@@ -134,7 +139,7 @@ if (!('vr' in navigator)) {
         // TODO: Check `referringDisplayId` and filter for the matching display.
         // Check if it's consistently unique in existing implementations.)
         var findReferringDisplay = function (displays) {
-          var (var i = 0; i < displays.length; i++) {
+          for (var i = 0; i < displays.length; i++) {
             if (navigator.vr.referringDisplay) {
               return;
             }
@@ -152,21 +157,147 @@ if (!('vr' in navigator)) {
         }
       }
     };
-    navigator.vr.getDisplays.then(function (displays) {
+    var transformDisplays = function (displays) {
       oldDisplays = displays;
-      oldDisplays.forEach(function (display) {
-        Object.assign(display, new EventTarget());
+      return oldDisplays.map(function (display) {
+        oldDisplaysPresenting[display.displayId] = display.isPresenting;
+        ['addEventListener', 'removeEventListener', 'dispatchEvent'].forEach(function (name) {
+          display[name] = ObjectEventTargetMixin.prototype[name];
+        });
+        display.connected = null;
+        display.presenting = null;
+        display.mounted = null;
+        return display;
       });
-    }).catch(console.warn.bind(console));
-    browser.runtime.onMessage.addListener(browserMsgListener);
-    navigator.vr = new ObjectEventTarget();
-    navigator.vr.getDisplays = 'getDisplays' in navigator ? navigator.getVRDisplays() : function () {
+    };
+    if ('getVRDisplays' in navigator) {
+      navigator.getVRDisplays().then(transformDisplays).catch(console.warn.bind(console));
+    }
+    if (browser && 'onMessage' in browser.runtime) {
+      browser.runtime.onMessage.addListener(browserMsgListener);
+    }
+    navigator.vr = new ObjectEventTargetMixin();
+    console.log(navigator.vr);
+    navigator.vr.getDisplays = 'getVRDisplays' in navigator ? function () {
+      return navigator.getVRDisplays().then(transformDisplays);
+    } : function () {
       throw new Error('"navigator.vr.getDisplays" is not supported');
-    });
+    };
     navigator.vr.getAvailability = function () {
       return Promise.resolve('vrEnabled' in navigator ? navigator.vrEnabled : false);
     };
     var browser = 'browser' in window ? browser : chrome;
+    var logEvent = function (eType) {
+      return function (e) {
+        if (!e.display && 'getVRDisplays' in navigator) {
+          navigator.getVRDisplays.then(function (displays) {
+            newDisplays = displays.map(function (display) {
+              // newDisplaysPresenting[display.displayId] = display.isPresenting;
+              Object.assign(display, new ObjectEventTargetMixin());
+              display.connected = null;
+              display.presenting = null;
+              display.mounted = null;
+              return display;
+            });
+            var i = 0;
+            for (; i < oldDisplays.length; i++) {
+              if ((e.type === 'vrdisplayconnected' || e.type === 'vrdisplayconnect') &&
+                  newDisplays.indexOf(oldDisplays[i]) === -1) {  // TODO: Ensure this finds the correct display in Firefox.
+                dispatchEvents('displaydisconnected', newDisplays[newDisplays.indexOf(oldDisplays[i])]);
+                return;
+              }
+            }
+            for (; i < newDisplays.length; i++) {
+              if ((e.type === 'vrdisplaydisconnected' || e.type === 'vrdisplaydisconnect') &&
+                  oldDisplays.indexOf(display) === -1) {  // TODO: Ensure this finds the correct display in Firefox.
+                dispatchEvents('displayconnected', newDisplays[i]);
+                return;
+              }
+            }
+            dispatchEventsFromOldEvents(e);
+            oldDisplays = transformDisplays(newDisplays);
+          });
+        }
+        var dispatchEvents = function (name, display, value) {
+          display = oldDisplays.filter(function (d) {
+            return d.displayId === display.id;
+          })[0] || transformDisplays([display])[0];
+          if (!display) {
+            console.warn('No old display found');
+          }
+
+          display.connected = display.isConnected;
+          display.presenting = display.isPresenting;
+          // delete display.isConnected;
+          // delete display.isPresenting;
+          var eventData = {
+            target: display,
+            display: display
+          };
+          if (typeof value !== 'undefined') {
+            eventData.value = value;
+          }
+          navigator.vr.dispatchEvent(Object.assign(eventData, {type: name}));
+          // TODO: Fix.
+          // console.log('dispatching', name, Object.assign(eventData, {type: name.substr('display'.length)}));
+          display.dispatchEvent(Object.assign(eventData, {type: name.substr('display'.length)}));
+        };
+        var dispatchEventsFromOldEvents = function (e) {
+          if (e.type === 'vrdisplayconnected' || e.type === 'vrdisplayconnect') {
+            dispatchEvents('displayconnected', e.display);
+          }
+          if (e.type === 'vrdisplaydisconnected' || e.type === 'vrdisplaydisconnect') {
+            dispatchEvents('displaydisconnected', e.display);
+          }
+        };
+        if (e.display) {
+          if (e.type === 'vrdisplayactivate') {
+            if (e.reason === 'mounted') {
+              e.display.mounted = true;
+            }
+            dispatchEvents('displaymounted', e.display);
+          } else if (e.type === 'vrdisplaydeactivate') {
+            if (e.reason === 'unmounted') {
+              e.display.mounted = false;
+            }
+            dispatchEvents('displayunmounted', e.display);
+          } else if (e.type === 'vrdisplayconnect') {
+            dispatchEvents('displayconnected', e.display);
+          } else if (e.type === 'vrdisplaydisconnect') {
+            dispatchEvents('displaydisconnected', e.display);
+          } else if (e.type === 'vrdisplaypresentchange') {
+            if ('getVRDisplays' in navigator) {
+              navigator.getVRDisplays().then(function (displays) {
+                var oldDisplayPresenting = oldDisplaysPresenting[e.display.displayId]
+                console.log(oldDisplaysPresenting, e.display.isPresenting);
+                if (oldDisplayPresenting !== e.display.isPresenting) {
+                  dispatchEvents('displaypresentchange', e.display);
+                  if (oldDisplayPresenting === false && e.display.isPresenting === true) {
+                    dispatchEvents('displaypresentbegin', e.display);
+                  } else if (oldDisplayPresenting === true && e.display.isPresenting === false) {
+                    dispatchEvents('displaypresentend', e.display);
+                  }
+                }
+                oldDisplays = transformDisplays(displays);
+              });
+            }
+          }
+        }
+        console.log('[content_script] event fired:', eType || '', e.type, e);
+      };
+    };
+
+    window.addEventListener('vrdisplayconnected', logEvent('vrdisplayconnected'));
+    window.addEventListener('vrdisplayconnect', logEvent('vrdisplayconnect'));
+    window.addEventListener('vrdisplaydisconnected', logEvent('vrdisplaydisconnected'));
+    window.addEventListener('vrdisplaydisconnect', logEvent('vrdisplayconnect'));
+    window.addEventListener('vrdisplayactivate', logEvent('vrdisplayactivate'));
+    window.addEventListener('vrdisplaydeactivate', logEvent('vrdisplaydeactivate'));
+    window.addEventListener('vrdisplayblur', logEvent('vrdisplayblur'));
+    window.addEventListener('vrdisplayfocus', logEvent('vrdisplayfocus'));
+    window.addEventListener('vrdisplaypresentchange', logEvent('vrdisplaypresentchange'));
+    // window.addEventListener('appinstalled', logEvent('appinstalled'));
+    // window.addEventListener('load', logEvent('load'));
   })(navigator);
   console.log('navigator.vr polyfilled:', navigator.vr);
 } else {
@@ -243,12 +374,6 @@ navigator.vr.getDisplays(displays => {
 
 var logEvent = function (eType) {
   return function (e) {
-    if (e.type === 'vrdisplayconnected' || e.type === 'vrdisplayconnect') {
-      vr.dispatchEvent('displayconnected');
-    }
-    if (e.type === 'vrdisplaydisconnected' || e.type === 'vrdisplaydisconnect') {
-      vr.dispatchEvent('displaydisconnected');
-    }
     console.log('[event]', eType || ''  , e.type, e);
   };
 };

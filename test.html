@@ -299,13 +299,14 @@ found in the LICENSE file.
       }
       })();
     </script>
+    <script src="firefox/content_script.js"></script>
     <script>
 navigator.getVRDisplays().then(displays => {
   console.log('displays', displays);
 });
 
 var logEvent = e => {
-  console.log('[event]', e.type, e);
+  console.log('window event fired', e.type, e);
 };
 
 window.addEventListener('vrdisplayconnected', logEvent);
@@ -321,6 +322,43 @@ window.addEventListener('appinstalled', logEvent);
 window.addEventListener('load', logEvent);
 
 console.log('loaded');
+
+navigator.vr.getAvailability().then(function (bool) {
+  console.log('navigator.vr.getAvailability', bool);
+});
+
+navigator.vr.getDisplays().then(function (displays) {
+  console.log('navigator.vr.getDisplays', displays);
+  displays.forEach(function (display) {
+    var displayEventListener = function (e) {
+      if (!e.display) {
+        return;
+      }
+      console.log('VR Display (%s - %s) event "%s" fired:', e.display.displayId, e.display.displayName, e.type, e);
+    };
+    display.addEventListener('connected', displayEventListener);
+    display.addEventListener('disconnected', displayEventListener);
+    display.addEventListener('mounted', displayEventListener);
+    display.addEventListener('unmounted', displayEventListener);
+    display.addEventListener('blurred', displayEventListener);
+    display.addEventListener('focused', displayEventListener);
+  });
+});
+
+var vrEventListener = function (e) {
+  console.log('navigator.vr event "%s" fired for VR Display (%s - %s):', e.type, e.display.displayId, e.display.displayName, e);
+};
+
+navigator.vr.addEventListener('displayconnected', vrEventListener);
+navigator.vr.addEventListener('displaydisconnected', vrEventListener);
+navigator.vr.addEventListener('displaymounted', vrEventListener);
+navigator.vr.addEventListener('displayunmounted', vrEventListener);
+navigator.vr.addEventListener('displaypresentchange', vrEventListener);
+navigator.vr.addEventListener('displaypresentbegin', vrEventListener);
+navigator.vr.addEventListener('displaypresentend', vrEventListener);
+navigator.vr.addEventListener('displayblurred', vrEventListener);
+navigator.vr.addEventListener('displayfocused', vrEventListener);
+
 
 /*
 
